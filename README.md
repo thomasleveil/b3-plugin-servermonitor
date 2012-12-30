@@ -102,7 +102,7 @@ Support
 -------
 
 Support is only provided on www.bigbrotherbot.net forums on the following topic :
-http://forum.bigbrotherbot.net/plugins-by-courgette/
+http://forum.bigbrotherbot.net/plugins-by-courgette/servers-monitor-plugin-advertise-your-game-servers/
 
 
 
