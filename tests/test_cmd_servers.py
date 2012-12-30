@@ -37,7 +37,7 @@ game-monitor.com: 1.2.3.4:27960
         # WHEN
         self.superadmin.says("!servers")
         # THEN
-        self.assertListEqual(['1.2.3.4:27960 : 15/20 test server 1.2.3.4'], self.superadmin.message_history)
+        self.assertListEqual(['1.2.3.4:27960 :  15/20 test server 1.2.3.4'], self.superadmin.message_history)
 
 
     def test_gamemonitor_two_servers(self):
@@ -53,8 +53,8 @@ game-monitor.com: 1.2.3.4:27960 4.3.2.1:27960
         # WHEN
         self.superadmin.says("!servers")
         # THEN
-        self.assertListEqual(['1.2.3.4:27960 : 15/20 test server 1.2.3.4',
-                              '4.3.2.1:27960 : 12/15 test server 4.3.2.1'],
+        self.assertListEqual(['1.2.3.4:27960 :  15/20 test server 1.2.3.4',
+                              '4.3.2.1:27960 :  12/15 test server 4.3.2.1'],
             self.superadmin.message_history)
 
 
@@ -121,13 +121,13 @@ quake3 server: 3.3.3.3:27960
         # WHEN
         self.superadmin.says("!servers 1")
         # THEN
-        self.assertListEqual(['1.1.1.1:27960 : 1/12 test server 1.1.1.1'], self.superadmin.message_history)
+        self.assertListEqual(['1.1.1.1:27960 :  1/12 test server 1.1.1.1'], self.superadmin.message_history)
 
     def test_nominal_2(self):
         # WHEN
         self.superadmin.says("!servers 2")
         # THEN
-        self.assertListEqual(['2.2.2.2:27960 : 2/16 test server 2.2.2.2'], self.superadmin.message_history)
+        self.assertListEqual(['2.2.2.2:27960 :  2/16 test server 2.2.2.2'], self.superadmin.message_history)
 
     def test_nominal_3(self):
         # WHEN

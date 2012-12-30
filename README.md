@@ -48,9 +48,25 @@ A command alias can be defined by adding it after the command name and a `-`.
 
 ### settings
 
-- `advertise on map change` can take the values `yes` or `no`. If set to `yes` then the game servers status will be shown when the map changes.
+##### advertise on map change
+
+Set if you want your game servers advertised automatically at map change.
+
+Value can be `yes` or `no`. If set to `yes` then the game servers status will be shown when the map changes.
 
 
+
+##### advertisement format
+
+Allows you to customize the way the game server info is advertised. Default format is : `^7{address} ^0: ^4{map} ^5{players}^7/^5{max_players} ^4{name}`
+
+Keywords you can use in the format string are :
+
+- `{address}`     : the server address
+- `{map}`         : the current map
+- `{players}`     : the current number of players
+- `{max_players}` : the maximum number of players accepted on the game server
+- `{name}`        : the game server name
 
 
 ### servers
@@ -58,7 +74,7 @@ A command alias can be defined by adding it after the command name and a `-`.
 Defines the server addresses to advertise.
 
 
-#### game-monitor.com
+##### game-monitor.com
 
 List of <ip:port> for each game server you would like advertised, separated by a space.
 
@@ -70,7 +86,7 @@ current map when using game-monitor.com as a data source.
     game-monitor.com: 11.22.33.44:27960 11.22.33.44:27962
 
 
-#### quake3 server
+##### quake3 server
 
 List of <ip:port> for each quake3 game server you would like advertised, separated by a space.
 
@@ -125,5 +141,6 @@ Changelog
 
 ### 1.21 - 2012-12-30
   - command !servers can now accept a parameter which is the server index to advertise exclusively
+  - add option 'advertisement format' in config file to allow game server advertisement message customization
 
 

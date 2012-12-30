@@ -13,7 +13,7 @@ class Test_GamemonitorServerInfo(TestCase):
 
     def test_nominal(self):
         # GIVEN
-        sut = GamemonitorServerInfo(self.console, "1.2.3.4:27960")
+        sut = GamemonitorServerInfo(self.console, "1.2.3.4:27960", "{address} : {map} {players}/{max_players} {name}")
         when(servermonitor).http_get("http://module.game-monitor.com/1.2.3.4:27960/data/server.js")\
         .thenReturn("""={"ip":"1.2.3.4","port":27960,"player":15,"maxplayer":20,"name":"test server 1.2.3.4","premium":
         "0","link":"http://www.game-monitor.com/cod4_GameServer/1.2.3.4:27960/test_server.html","error":0,"query_time":
@@ -32,11 +32,11 @@ class Test_GamemonitorServerInfo(TestCase):
             u'premium': u'0',
             u'query_time': u'136ms'},
             sut.data)
-        self.assertEqual('1.2.3.4:27960 : 15/20 test server 1.2.3.4', str(sut))
+        self.assertEqual('1.2.3.4:27960 :  15/20 test server 1.2.3.4', str(sut))
 
     def test_timeout(self):
         # GIVEN
-        sut = GamemonitorServerInfo(self.console, "1.2.3.4:27960")
+        sut = GamemonitorServerInfo(self.console, "1.2.3.4:27960", "{address} : {map} {players}/{max_players} {name}")
         when(servermonitor).http_get("http://module.game-monitor.com/1.2.3.4:27960/data/server.js")\
         .thenRaise(socket.timeout)
         # WHEN
@@ -47,7 +47,7 @@ class Test_GamemonitorServerInfo(TestCase):
 
     def test_junk_response(self):
         # GIVEN
-        sut = GamemonitorServerInfo(self.console, "1.2.3.4:27960")
+        sut = GamemonitorServerInfo(self.console, "1.2.3.4:27960", "{address} : {map} {players}/{max_players} {name}")
         when(servermonitor).http_get("http://module.game-monitor.com/1.2.3.4:27960/data/server.js")\
         .thenReturn('f00')
         # WHEN

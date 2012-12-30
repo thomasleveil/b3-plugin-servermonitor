@@ -68,10 +68,18 @@ class ServerInfo(object):
     ServerInfo abstract base class.
     Subclasses must implement the update method which must fill in the 'info' property.
     """
-    def __init__(self, console, address):
+
+    @staticmethod
+    def validate_advertisement_format(format):
+        format.format(address=None, map=None, players=None, max_players=None, name=None)
+        if '{address}' not in format:
+            raise ValueError, "missing mandatory keyword {address}"
+
+    def __init__(self, console, address, msg_format):
         self.console = console
         self.address = address
-        self.info = "unkown"
+        self.msg_format = msg_format
+        self.info = None
         self._data = None
 
     @property
@@ -85,7 +93,10 @@ class ServerInfo(object):
         raise NotImplemented
 
     def __str__(self):
-        return "%s : %s" % (self.address, self.info)
+        if not self.info:
+            return "%s : unknown" % self.address
+        else:
+            return self.info
 
     def __repr__(self):
         return "%s(%r)" % (self.__class__.__name__, self.address)
@@ -123,7 +134,7 @@ class GamemonitorServerInfo(ServerInfo):
         url = "http://module.game-monitor.com/%s/data/server.js" % self.address
         self.console.debug("Downloading json from %s" % url)
         self._data = None
-        self.info = "unknown"
+        self.info = None
         try:
             raw_data = http_get(url)
         except urllib2.HTTPError, err:
@@ -136,7 +147,13 @@ class GamemonitorServerInfo(ServerInfo):
         else:
             self.data = raw_data
             if self.data:
-                self.info = "%s/%s %s" % (self.data.get("player", "?"), self.data.get("maxplayer", "?"), self.data.get("name", "?"))
+                self.info = self.msg_format.format(
+                    address=self.address,
+                    map="", # sadly no map info is provided by game-monitor.com
+                    players=self.data.get("player", "?"),
+                    max_players=self.data.get("maxplayer", "?"),
+                    name=self.data.get("name", "?")
+                )
 
 
 
@@ -159,40 +176,43 @@ class Quake3ServerInfo(ServerInfo):
     def update(self):
         self.console.info("Updating info for %r" % self)
         self._data = None
-        self.info = "unknown"
+        self.info = None
         try:
             raw_data = quake3_info(self.address)
         except socket.timeout:
-            self.info = "down"
+            self.info = "%s : down" % self.address
         except Exception, err:
             self.console.error(err)
         else:
             self.console.verbose(repr(raw_data))
             self.data = raw_data
             if self.data:
-                self.info = "%s %s/%s %s" % (self.data.get("mapname", "?"), self.data.get("clients", "?"), self.data.get("sv_maxclients", "?"), self.data.get("hostname", "?"))
-
+                self.info = self.msg_format.format(
+                    address=self.address,
+                    map=self.data.get("mapname", "?"),
+                    players=self.data.get("clients", "?"),
+                    max_players=self.data.get("sv_maxclients", "?"),
+                    name=self.data.get("hostname", "?")
+                )
 
 
 class ServermonitorPlugin(Plugin):
     """
     B3 plugin class
     """
+    DEFAULT_ADVERTISE_ON_MAP_CHANGE = False
+    DEFAULT_ADVERTISEMENT_FORMAT = """^7{address} ^0: ^4{map} ^5{players}^7/^5{max_players} ^4{name}"""
 
     def __init__(self, console, config=None):
-        self.advertise_on_map_change = False
+        self.advertise_on_map_change = ServermonitorPlugin.DEFAULT_ADVERTISE_ON_MAP_CHANGE
         self.servers = []
+        self.advertisement_format = ServermonitorPlugin.DEFAULT_ADVERTISEMENT_FORMAT
         Plugin.__init__(self, console, config)
 
     def onLoadConfig(self):
-        # get the admin plugin
-        self._adminPlugin = self.console.getPlugin('admin')
-        if not self._adminPlugin:
-            # something is wrong, can't start without admin plugin
-            self.error('Could not find admin plugin')
-            return
         self.register_commands()
-        self.load_conf_settings()
+        self.load_conf_settings_advertise_on_map_change()
+        self.load_conf_settings_advertisement_format()
         self.servers = []
         self.load_conf_servers_gamemonitor()
         self.load_conf_servers_quake3()
@@ -216,7 +236,7 @@ class ServermonitorPlugin(Plugin):
         else:
             raw_server_list = self.config.get('servers', 'game-monitor.com')
             for address in re.findall("(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]):\d+", raw_server_list):
-                servers.append(GamemonitorServerInfo(self.console, address))
+                servers.append(GamemonitorServerInfo(self.console, address, self.advertisement_format))
         if len(servers):
             self.info('servers loaded from config for datasource game-monitor.com: ' + ', '.join([_.address for _ in servers]))
             self.servers.extend(servers)
@@ -233,7 +253,7 @@ class ServermonitorPlugin(Plugin):
         else:
             raw_server_list = self.config.get('servers', 'quake3 server')
             for address in re.findall("\S+:\d+", raw_server_list):
-                servers.append(Quake3ServerInfo(self.console, address))
+                servers.append(Quake3ServerInfo(self.console, address, self.advertisement_format))
         if len(servers):
             self.info('servers loaded from config for datasource "quake3 server": ' + ', '.join([_.address for _ in servers]))
             self.servers.extend(servers)
@@ -241,15 +261,44 @@ class ServermonitorPlugin(Plugin):
             self.info('No server loaded from config for datasource "quake3 server"')
 
 
-    def load_conf_settings(self):
-        self.advertise_on_map_change = False
+    def load_conf_settings_advertise_on_map_change(self):
+        self.advertise_on_map_change = ServermonitorPlugin.DEFAULT_ADVERTISE_ON_MAP_CHANGE
         if not self.config.has_section('settings'):
             self.error("The config has no section 'settings'.")
         elif not self.config.has_option('settings', 'advertise on map change'):
             self.warning("The config is missing 'advertise on map change' in section 'settings'.")
         else:
-            self.advertise_on_map_change = self.config.getboolean('settings', 'advertise on map change')
+            try:
+                self.advertise_on_map_change = self.config.getboolean('settings', 'advertise on map change')
+            except ValueError:
+                self.error("Unexpected value for setting 'advertise on map change' in section 'settings': %r. Expecting 'yes' or 'no'" % self.config.get('settings', 'advertise on map change'))
+            except Exception, err:
+                self.error(err)
         self.info('advertise servers on map change: %s' % ('yes' if self.advertise_on_map_change else 'no'))
+
+
+    def load_conf_settings_advertisement_format(self):
+        self.advertisement_format = ServermonitorPlugin.DEFAULT_ADVERTISEMENT_FORMAT
+        if not self.config.has_section('settings'):
+            self.error("The config has no section 'settings'.")
+        elif not self.config.has_option('settings', 'advertisement format'):
+            self.warning("The config is missing 'advertisement format' in section 'settings'.")
+        else:
+            raw_format = self.config.get('settings', 'advertisement format')
+            if not raw_format:
+                self.error("Invalid advertisement format. Cannot be empty")
+            else:
+                try:
+                    ServerInfo.validate_advertisement_format(raw_format)
+                except KeyError, err:
+                    self.error("Invalid advertisement format %r. Invalid keyword {%s}" % (raw_format, err.message))
+                except ValueError, err:
+                    self.error("Invalid advertisement format %r. %s" % (raw_format, err.message))
+                except Exception, err:
+                    self.error("Invalid advertisement format %r. %s" % (raw_format, err.message), exc_info=err)
+                else:
+                    self.advertisement_format = raw_format
+        self.info('advertisement_format: %s' % self.advertisement_format)
 
 
 
@@ -305,6 +354,12 @@ class ServermonitorPlugin(Plugin):
     ###############################################################################################
 
     def register_commands(self):
+        # get the admin plugin
+        adminPlugin = self.console.getPlugin('admin')
+        if not adminPlugin:
+            self.error('Could not find admin plugin')
+            return
+
         def getCmd(cmd):
             cmd = 'cmd_%s' % cmd
             if hasattr(self, cmd):
@@ -322,6 +377,6 @@ class ServermonitorPlugin(Plugin):
 
                 func = getCmd(cmd)
                 if func:
-                    self._adminPlugin.registerCommand(self, cmd, level, func, alias)
+                    adminPlugin.registerCommand(self, cmd, level, func, alias)
         else:
             self.warning("could not find section 'commands' in the plugin config. No command can be made available.")

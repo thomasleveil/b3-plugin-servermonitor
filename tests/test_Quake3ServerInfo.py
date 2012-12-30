@@ -13,7 +13,7 @@ class Test_Quake3ServerInfo(TestCase):
 
     def test_nominal(self):
         # GIVEN
-        sut = Quake3ServerInfo(self.console, "1.2.3.4:27960")
+        sut = Quake3ServerInfo(self.console, "1.2.3.4:27960", "{address} : {map} {players}/{max_players} {name}")
         when(servermonitor).quake3_info("1.2.3.4:27960").thenReturn(
             '\xff\xff\xff\xffinfoResponse\n\\modversion\\4.2.009\\game\\q3ut4\\auth\\1\\pure\\1\\gametype\\4\\sv_maxcli'
             'ents\\12\\clients\\2\\mapname\\ut4_casa\\hostname\\Test server name\\protocol\\68')
@@ -36,7 +36,7 @@ class Test_Quake3ServerInfo(TestCase):
 
     def test_timeout(self):
         # GIVEN
-        sut = Quake3ServerInfo(self.console, "1.2.3.4:27960")
+        sut = Quake3ServerInfo(self.console, "1.2.3.4:27960", "{address} : {map} {players}/{max_players} {name}")
         when(servermonitor).quake3_info("1.2.3.4:27960").thenRaise(socket.timeout)
         # WHEN
         sut.update()
@@ -46,7 +46,7 @@ class Test_Quake3ServerInfo(TestCase):
 
     def test_junk_response(self):
         # GIVEN
-        sut = Quake3ServerInfo(self.console, "1.2.3.4:27960")
+        sut = Quake3ServerInfo(self.console, "1.2.3.4:27960", "{address} : {map} {players}/{max_players} {name}")
         when(servermonitor).quake3_info("1.2.3.4:27960").thenReturn('f00')
         # WHEN
         sut.update()
