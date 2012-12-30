@@ -24,9 +24,10 @@ import re
 import socket
 import urllib2
 from b3.plugin import Plugin
+#noinspection PyUnresolvedReferences
 from b3.events import EVT_GAME_MAP_CHANGE
 
-__version__ = '1.0'
+__version__ = '1.1'
 __author__  = 'Courgette'
 
 
@@ -63,6 +64,10 @@ def quake3_info(address):
 
 
 class ServerInfo(object):
+    """
+    ServerInfo abstract base class.
+    Subclasses must implement the update method which must fill in the 'info' property.
+    """
     def __init__(self, console, address):
         self.console = console
         self.address = address
@@ -87,6 +92,9 @@ class ServerInfo(object):
 
 
 class GamemonitorServerInfo(ServerInfo):
+    """
+    ServerInfo subclass which reads the status of game servers querying the webservice at www.game-monitor.com.
+    """
 
     @ServerInfo.data.setter
     def data(self, value):
@@ -133,6 +141,9 @@ class GamemonitorServerInfo(ServerInfo):
 
 
 class Quake3ServerInfo(ServerInfo):
+    """
+    ServerInfo subclass which is able to query directly the status of game servers based on the Quake3 engine.
+    """
 
     @ServerInfo.data.setter
     def data(self, value):
@@ -164,11 +175,14 @@ class Quake3ServerInfo(ServerInfo):
 
 
 class ServermonitorPlugin(Plugin):
+    """
+    B3 plugin class
+    """
 
     def __init__(self, console, config=None):
-        Plugin.__init__(self, console, config)
         self.advertise_on_map_change = False
         self.servers = []
+        Plugin.__init__(self, console, config)
 
     def onLoadConfig(self):
         # get the admin plugin

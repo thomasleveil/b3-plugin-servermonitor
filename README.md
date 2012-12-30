@@ -111,8 +111,9 @@ Changelog
 ---------
 
 1.0 - 2012-12-30
-  first release
-
+  - first release
+1.1 - 2012-12-30
+  - fix issue which server list that appears empty unles we type !reconfig
 
 
 
