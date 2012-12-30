@@ -27,7 +27,7 @@ from b3.plugin import Plugin
 #noinspection PyUnresolvedReferences
 from b3.events import EVT_GAME_MAP_CHANGE
 
-__version__ = '1.1'
+__version__ = '1.2'
 __author__  = 'Courgette'
 
 
@@ -262,8 +262,8 @@ class ServermonitorPlugin(Plugin):
     def onEvent(self, event):
         if len(self.servers):
             if event.type == EVT_GAME_MAP_CHANGE and self.advertise_on_map_change:
-                self.update_servers()
                 for server in self.servers:
+                    server.update()
                     self.console.say(str(server))
 
 
@@ -275,14 +275,27 @@ class ServermonitorPlugin(Plugin):
 
     def cmd_servers(self, data, client, cmd=None):
         """\
-        advertise other game servers
+        [server #] - advertise game servers. If a server number is given advertise that server only.
         """
         if not len(self.servers):
             cmd.sayLoudOrPM(client, "no server setup")
         else:
-            self.update_servers()
-            for server in self.servers:
-                cmd.sayLoudOrPM(client, str(server))
+            if not data:
+                for server in self.servers:
+                    server.update()
+                    cmd.sayLoudOrPM(client, str(server))
+            else:
+                try:
+                    server_index = int(data)
+                except ValueError:
+                    client.message("invalid server index. Try %shelp %s" % (cmd.prefix, cmd.command))
+                else:
+                    if not 1 <= server_index <= len(self.servers):
+                        client.message("invalid server index. Server indexes go from 1 to %s" % len(self.servers))
+                    else:
+                        server = self.servers[server_index - 1]
+                        server.update()
+                        cmd.sayLoudOrPM(client, str(server))
 
 
     ###############################################################################################
@@ -312,9 +325,3 @@ class ServermonitorPlugin(Plugin):
                     self._adminPlugin.registerCommand(self, cmd, level, func, alias)
         else:
             self.warning("could not find section 'commands' in the plugin config. No command can be made available.")
-
-
-    def update_servers(self):
-        for s in self.servers:
-            s.update()
-

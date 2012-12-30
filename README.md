@@ -95,6 +95,13 @@ show current status of each game server set in the plugin config file
 ### @servers
 like _!servers_ but will show the game server statuses to all players. (you need to be admin)
 
+### !servers 2
+show current status of the second game server set in the plugin config file
+
+### @servers 3
+show to all players the current status of the third game server set in the plugin config file. (you need to be admin)
+
+
 
 
 
@@ -116,5 +123,7 @@ Changelog
 ### 1.1 - 2012-12-30
   - fix issue which server list that appears empty unles we type !reconfig
 
+### 1.21 - 2012-12-30
+  - command !servers can now accept a parameter which is the server index to advertise exclusively
 
 

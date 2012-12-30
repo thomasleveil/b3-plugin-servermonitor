@@ -21,7 +21,6 @@ from unittest2 import TestCase
 from mock import patch
 from mockito import when
 from b3.config import CfgConfigParser, XmlConfigParser
-from b3.fake import FakeConsole, FakeClient
 from b3.plugins.admin import AdminPlugin
 from servermonitor import ServermonitorPlugin
 from b3.output import VERBOSE
@@ -38,6 +37,7 @@ class ServermonitorTestCase(TestCase):
         self.logger.setLevel(logging.ERROR)
         self.logger.propagate = False
 
+        from b3.fake import FakeConsole, FakeClient
 
         # create a Fake parser
         self.parser_conf = XmlConfigParser()
