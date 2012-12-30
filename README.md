@@ -110,9 +110,10 @@ http://forum.bigbrotherbot.net/plugins-by-courgette/servers-monitor-plugin-adver
 Changelog
 ---------
 
-1.0 - 2012-12-30
+### 1.0 - 2012-12-30
   - first release
-1.1 - 2012-12-30
+
+### 1.1 - 2012-12-30
   - fix issue which server list that appears empty unles we type !reconfig
 
 
