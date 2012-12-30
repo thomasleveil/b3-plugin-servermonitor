@@ -139,7 +139,7 @@ Changelog
 ### 1.1 - 2012-12-30
   - fix issue which server list that appears empty unles we type !reconfig
 
-### 1.21 - 2012-12-30
+### 1.2 - 2012-12-30
   - command !servers can now accept a parameter which is the server index to advertise exclusively
   - add option 'advertisement format' in config file to allow game server advertisement message customization
 
