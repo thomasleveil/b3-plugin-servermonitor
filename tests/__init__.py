@@ -17,7 +17,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 import logging
-from unittest import TestCase
+from unittest2 import TestCase
 from mock import patch
 from mockito import when
 from b3.config import CfgConfigParser, XmlConfigParser

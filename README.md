@@ -8,7 +8,7 @@ Description
 -----------
 
 This plugin adds a command `!servers` which displays the status (ip:port, map, players/max, name) of different game servers of your choice.
-You can choose to automatically advertise those servers at map change.
+You can choose to automatically advertise those servers on map change.
 
 You define the servers you want advertised in the plugin config file. All game servers based on the Quake3 engine can
 be advertised as well as all servers supported at http://www.game-monitor.com.
@@ -20,7 +20,7 @@ Installation
 
 - copy servermonitor.py into b3/extplugins
 - copy plugin_servermonitor.cfg in the same directory as your b3.xml
-- add to the plugins section of your main b3 config file::
+- add to the plugins section of your main b3 config file:
 
   `<plugin name="servermonitor" config="@conf/plugin_servermonitor.cfg" />`
 

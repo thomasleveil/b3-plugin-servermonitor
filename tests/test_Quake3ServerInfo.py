@@ -1,6 +1,6 @@
 import socket
 from mock import Mock
-from unittest import TestCase
+from unittest2 import TestCase
 from mockito import when
 import sys
 from servermonitor import Quake3ServerInfo
