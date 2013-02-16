@@ -1,5 +1,5 @@
-servermonitor plugin for Big Brother Bot (www.bigbrotherbot.net)
-================================================================
+servermonitor plugin for Big Brother Bot
+========================================
 
 http://www.bigbrotherbot.net
 
