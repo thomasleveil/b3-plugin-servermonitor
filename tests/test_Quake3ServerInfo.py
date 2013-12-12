@@ -54,3 +54,27 @@ class Test_Quake3ServerInfo(TestCase):
         self.assertIsNone(sut.data)
         self.assertEqual('1.2.3.4:27960 : unknown', str(sut))
 
+    def test_empty_cod4_server(self):
+        # GIVEN
+        sut = Quake3ServerInfo(self.console, "1.2.3.4:27960", "{address} : {map} {players}/{max_players} {name}")
+        when(servermonitor).quake3_info("1.2.3.4:27960").thenReturn(
+            '\xff\xff\xff\xffinfoResponse\n\\protocol\\6\\hostname\\^4#^7Lf^1. TDM ^2HC ^4F^7R^1A\\mapname\\mp_crossf'
+            'ire\\sv_maxclients\\22\\gametype\\war\\pure\\1\\kc\\1\\hc\\1\\hw\\1\\mod\\0\\voice\\0\\pb\\0')
+        # WHEN
+        sut.update()
+        # THEN
+        self.assertDictEqual({
+            'protocol': '6',
+            'hostname': '^4#^7Lf^1. TDM ^2HC ^4F^7R^1A',
+            'mapname': 'mp_crossfire',
+            'sv_maxclients': '22',
+            'gametype': 'war',
+            'pure': '1',
+            'kc': '1',
+            'hc': '1',
+            'hw': '1',
+            'mod': '0',
+            'voice': '0',
+            'pb': '0',
+        }, sut.data)
+        self.assertEqual('1.2.3.4:27960 : mp_crossfire ?/22 ^4#^7Lf^1. TDM ^2HC ^4F^7R^1A', str(sut))
