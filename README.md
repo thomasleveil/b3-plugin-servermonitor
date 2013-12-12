@@ -102,6 +102,7 @@ Works for Call of Duty servers, Urban Terror, etc
 ##### BF3 server
 
 List of <ip:port> for each BF3 game server you would like advertised, separated by a space.
+NOTE: the port number is the game admin (rcon) port.
 
 **Example :**
 
