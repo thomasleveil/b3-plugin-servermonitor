@@ -105,7 +105,7 @@ List of <ip:port> for each BF3 game server you would like advertised, separated 
 
 **Example :**
 
-    quake3 server: 11.22.33.44:47200 11.22.33.55:47200
+    BF3 server: 11.22.33.44:47200 11.22.33.55:47200
 
 
 
