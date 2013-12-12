@@ -67,6 +67,7 @@ Keywords you can use in the format string are :
 - `{players}`     : the current number of players
 - `{max_players}` : the maximum number of players accepted on the game server
 - `{name}`        : the game server name
+- `{gamemode}`    : the game server name (for games running on the Frostbite engine only)
 
 
 ### servers
@@ -96,6 +97,15 @@ Works for Call of Duty servers, Urban Terror, etc
 **Example :**
 
     quake3 server: 11.22.33.44:27960 11.22.33.44:27962
+
+
+##### BF3 server
+
+List of <ip:port> for each BF3 game server you would like advertised, separated by a space.
+
+**Example :**
+
+    quake3 server: 11.22.33.44:47200 11.22.33.55:47200
 
 
 
@@ -143,4 +153,6 @@ Changelog
   - command !servers can now accept a parameter which is the server index to advertise exclusively
   - add option 'advertisement format' in config file to allow game server advertisement message customization
 
+### 1.3 - 2013-12-12
+  - add support for BF3 game servers
 

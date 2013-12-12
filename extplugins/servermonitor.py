@@ -18,20 +18,35 @@
 #
 #
 import StringIO
+from contextlib import closing
 import gzip
 import json
 import re
 import socket
 import urllib2
+from b3.parsers.frostbite.connection import FrostbiteConnection
 from b3.plugin import Plugin
 #noinspection PyUnresolvedReferences
 from b3.events import EVT_GAME_MAP_CHANGE
+from b3.parsers.bf3 import Bf3Parser, MAP_NAME_BY_ID as bf3_MAP_NAME_BY_ID, GAME_MODES_NAMES as bf3_GAME_MODES_NAMES
 
-__version__ = '1.2'
-__author__  = 'Courgette'
+__version__ = '1.3'
+__author__ = 'Courgette'
 
 
-USER_AGENT =  "B3 gamemonitor plugin/%s" % __version__
+USER_AGENT = "B3 gamemonitor plugin/%s" % __version__
+
+
+class Frostbite1Connection(FrostbiteConnection):
+    """
+    Customize FrostbiteConnection so it can work without password
+    """
+    def __init__(self, console, host, port):
+        self.console = console
+        self._host = host
+        self._port = port
+        self._password = None
+        self._connect()
 
 
 def http_get(url):
@@ -50,6 +65,7 @@ def http_get(url):
         gzipper = gzip.GzipFile(fileobj=result)
         result = gzipper.read()
     return result
+
 
 def quake3_info(address):
     """
@@ -156,7 +172,6 @@ class GamemonitorServerInfo(ServerInfo):
                 )
 
 
-
 class Quake3ServerInfo(ServerInfo):
     """
     ServerInfo subclass which is able to query directly the status of game servers based on the Quake3 engine.
@@ -196,6 +211,57 @@ class Quake3ServerInfo(ServerInfo):
                 )
 
 
+class BF3ServerInfo(ServerInfo):
+    """
+    ServerInfo subclass which is able to query directly the status of BF3 game servers.
+    """
+
+    def frostbite_info(self):
+        """
+        return serverInfo response from a frostbite game server.
+        """
+        host = self.address.split(':')[0]
+        port = int(self.address.split(':')[1])
+        with closing(Frostbite1Connection(self.console, host, port)) as t_conn:
+            return t_conn.sendRequest(('serverInfo',))[1:]
+
+    @ServerInfo.data.setter
+    def data(self, value):
+        try:
+            self._data = Bf3Parser.decodeServerinfo(value)
+        except Exception, err:
+            self.console.error(err)
+            self._data = None
+        else:
+            self._data['map'] = bf3_MAP_NAME_BY_ID.get(self.data['level'], self.data['level'])
+            del self._data['level']
+            self._data['gamemode'] = bf3_GAME_MODES_NAMES.get(self.data['gamemode'], self.data['gamemode'])
+            self._data['address'] = self.address
+            self._data['name'] = self._data['serverName']
+            del self._data['serverName']
+            self._data['players'] = self._data['numPlayers']
+            del self._data['numPlayers']
+            self._data['max_players'] = self._data['maxPlayers']
+            del self._data['maxPlayers']
+        self.console.verbose(repr(self._data))
+
+    def update(self):
+        self.console.info("Updating info for %r" % self)
+        self._data = None
+        self.info = None
+        try:
+            raw_data = self.frostbite_info()
+        except socket.timeout:
+            self.info = "%s : down" % self.address
+        except Exception, err:
+            self.console.error(err)
+        else:
+            self.console.verbose(repr(raw_data))
+            self.data = raw_data
+            if self.data:
+                self.info = self.msg_format.format(**self.data)
+
+
 class ServermonitorPlugin(Plugin):
     """
     B3 plugin class
@@ -216,6 +282,7 @@ class ServermonitorPlugin(Plugin):
         self.servers = []
         self.load_conf_servers_gamemonitor()
         self.load_conf_servers_quake3()
+        self.load_conf_servers_BF3()
 
     def onStartup(self):
         self.registerEvent(EVT_GAME_MAP_CHANGE)
@@ -227,38 +294,30 @@ class ServermonitorPlugin(Plugin):
     #
     ###############################################################################################
 
-    def load_conf_servers_gamemonitor(self):
+    def _load_conf_servers(self, server_info_class, config_option_name, findall_regexp):
         servers = []
         if not self.config.has_section('servers'):
             self.error("The config has no section 'servers'.")
-        elif not self.config.has_option('servers', 'game-monitor.com'):
-            self.warning("The config is missing 'game-monitor.com' in section 'servers'.")
+        elif not self.config.has_option('servers', config_option_name):
+            self.warning("The config is missing '%s' in section 'servers'." % config_option_name)
         else:
-            raw_server_list = self.config.get('servers', 'game-monitor.com')
-            for address in re.findall("(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]):\d+", raw_server_list):
-                servers.append(GamemonitorServerInfo(self.console, address, self.advertisement_format))
+            raw_server_list = self.config.get('servers', config_option_name)
+            for address in re.findall(findall_regexp, raw_server_list):
+                servers.append(server_info_class(self.console, address, self.advertisement_format))
         if len(servers):
-            self.info('servers loaded from config for datasource game-monitor.com: ' + ', '.join([_.address for _ in servers]))
+            self.info('servers loaded from config for datasource %r: ' % config_option_name + ', '.join([_.address for _ in servers]))
             self.servers.extend(servers)
         else:
-            self.info('No server loaded from config for datasource game-monitor.com')
+            self.info('No server loaded from config for datasource %s' % config_option_name)
 
+    def load_conf_servers_gamemonitor(self):
+        self._load_conf_servers(GamemonitorServerInfo, 'game-monitor.com', "(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]):\d+")
 
     def load_conf_servers_quake3(self):
-        servers = []
-        if not self.config.has_section('servers'):
-            self.error("The config has no section 'servers'.")
-        elif not self.config.has_option('servers', 'quake3 server'):
-            self.warning("The config is missing 'quake3 server' in section 'servers'.")
-        else:
-            raw_server_list = self.config.get('servers', 'quake3 server')
-            for address in re.findall("\S+:\d+", raw_server_list):
-                servers.append(Quake3ServerInfo(self.console, address, self.advertisement_format))
-        if len(servers):
-            self.info('servers loaded from config for datasource "quake3 server": ' + ', '.join([_.address for _ in servers]))
-            self.servers.extend(servers)
-        else:
-            self.info('No server loaded from config for datasource "quake3 server"')
+        self._load_conf_servers(Quake3ServerInfo, 'quake3 server', "\S+:\d+")
+
+    def load_conf_servers_BF3(self):
+        self._load_conf_servers(BF3ServerInfo, 'BF3 server', "\S+:\d+")
 
 
     def load_conf_settings_advertise_on_map_change(self):

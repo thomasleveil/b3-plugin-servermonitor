@@ -51,6 +51,7 @@ class Test_config(ConfigTestCase):
             call("The config has no section 'settings'."),
             call("The config has no section 'settings'."),
             call("The config has no section 'servers'."),
+            call("The config has no section 'servers'."),
             call("The config has no section 'servers'.")
         ], self.error_mock.mock_calls)
         self.assertListEqual([call("could not find section 'commands' in the plugin config. No command can be made available.")],
@@ -59,7 +60,8 @@ class Test_config(ConfigTestCase):
             call('advertise servers on map change: no'),
             call('advertisement_format: %s' % DEFAULT_ADVERTISEMENT_FORMAT),
             call('No server loaded from config for datasource game-monitor.com'),
-            call('No server loaded from config for datasource "quake3 server"')
+            call('No server loaded from config for datasource quake3 server'),
+            call('No server loaded from config for datasource BF3 server')
         ], self.info_mock.mock_calls)
 
     @skipUnless(os.path.isfile(DEFAULT_CONFIG_FILE), "Default config file not found at " + DEFAULT_CONFIG_FILE)
@@ -78,7 +80,8 @@ class Test_config(ConfigTestCase):
             call('advertise servers on map change: yes'),
             call('advertisement_format: %s' % DEFAULT_ADVERTISEMENT_FORMAT),
             call('No server loaded from config for datasource game-monitor.com'),
-            call('No server loaded from config for datasource "quake3 server"')
+            call('No server loaded from config for datasource quake3 server'),
+            call('No server loaded from config for datasource BF3 server')
         ], self.info_mock.mock_calls)
 
 
@@ -115,7 +118,7 @@ game-monitor.com: 1.2.3.4:27960 4.5.6.7:27960
         self.assertListEqual([], self.error_mock.mock_calls)
         self.assertListEqual([], self.warning_mock.mock_calls)
         self.assertListEqual([
-            call('servers loaded from config for datasource game-monitor.com: 1.2.3.4:27960, 4.5.6.7:27960'),
+            call("servers loaded from config for datasource 'game-monitor.com': 1.2.3.4:27960, 4.5.6.7:27960"),
         ], self.info_mock.mock_calls)
 
 
@@ -133,7 +136,24 @@ quake3 server: 1.2.3.4:27960 4.5.6.7:27960
         self.assertListEqual([], self.error_mock.mock_calls)
         self.assertListEqual([], self.warning_mock.mock_calls)
         self.assertListEqual([
-            call('servers loaded from config for datasource "quake3 server": 1.2.3.4:27960, 4.5.6.7:27960')
+            call("servers loaded from config for datasource 'quake3 server': 1.2.3.4:27960, 4.5.6.7:27960")
+        ], self.info_mock.mock_calls)
+
+    def test_BF3(self):
+        # GIVEN
+        self.conf.loadFromString("""
+[servers]
+BF3 server: 1.2.3.4:27960 4.5.6.7:27960
+        """)
+        # WHEN
+        self.p.load_conf_servers_BF3()
+        # THEN
+        self.assertListEqual(["BF3ServerInfo('1.2.3.4:27960')", "BF3ServerInfo('4.5.6.7:27960')"], map(repr, self.p.servers))
+        self.assertFalse(self.p.advertise_on_map_change)
+        self.assertListEqual([], self.error_mock.mock_calls)
+        self.assertListEqual([], self.warning_mock.mock_calls)
+        self.assertListEqual([
+            call("servers loaded from config for datasource 'BF3 server': 1.2.3.4:27960, 4.5.6.7:27960")
         ], self.info_mock.mock_calls)
 
 
